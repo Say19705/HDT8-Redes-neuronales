@@ -8,19 +8,24 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 #Ingebor Rubio/Desktop/Trabajos/Quinto Semestre/Mineria/HDT7SVM
-#"C:/Users/andre/OneDrive/Documentos/3er año/1er semestre/Minería de datos/HDT8-Redes-neuronales"
+#"C:/Users/andre/OneDrive/Documentos/3er año/1er semestre/Minería de #datos/HDT8-Redes-neuronales"
 
 knitr::opts_knit$set(root.dir="C:/Users/andre/OneDrive/Documentos/3er año/1er semestre/Minería de datos/HDT8-Redes-neuronales")
 ```
 
 # Hoja de Trabajo No. 8: Redes neuronales
 
-En esta hoja de trabajo se busca poder clasificar una casa según su precio de venta, esto en tres posibles rangos: económicas, intermedias y caras. Para hacer esta predicción se buscará un modelo de SVM que haga una mejor clasificación, por lo que se han escogido las variables numéricas para plantear los modelos.
+En esta hoja de trabajo se busca poder clasificar una casa según su precio de venta, dividiendoló en 3 grupos; económicas, intermedias y caras. con el fin de poder realizar esta predicción se utilizará redes neuronales para evaluar cuál método ofrece el mejor resultado. Los algoritmos de RNA son capaces de aprender modicándose automáticamente así mismo y automatizando sus funciones, son bastante complejos, pero esto permite que la predicción sea certera.
 
+Primero es necesario cargar los datos, colocar los rangos y realizar el corte para tener un conjunto de entrenamiento y otro de prueba
 ```{r data, echo=FALSE}
 datosCasas <- read.csv("train.csv")
 library(caret)
-library(e1071)
+library(nnet)
+library(RWeka)
+library(neural)
+library(dummy)
+library(neuralnet)
 
 porciento <- 70/100
 
@@ -36,4 +41,40 @@ trainRowsNumber<-sample(nrow(datos),porciento*nrow(datos))
 train<-datos[trainRowsNumber,]
 test<-datos[-trainRowsNumber,]
 ```
+
+Para poder clasificar una casa como económica, inermedia y cara se utilizarán 2 métodos de redes neuronales con distinta topología para poder comparar resultados e identificar difenrencias.
+primero se utilizará el modelo de redes neuronales por nnet
+
+```{r nnet, echo=FALSE}
+
+
+modelo.nn2 <- nnet(datosCasas$y~.,data = datos,subset = trainRowsNumber, size=2, rang=0.1,
+                   decay=5e-4, maxit=200) 
+
+prediccion2 <- as.data.frame(predict(modelo.nn2, newdata = test[,1:32]))
+columnaMasAlta<-apply(prediccion2, 1, function(x) colnames(prediccion2)[which.max(x)])
+test$prediccion2<-columnaMasAlta #Se le aÃ±ade al grupo de prueba el valor de la predicciÃ³n
+
+cfm<-confusionMatrix(as.factor(test$prediccion2),test$y)
+cfm
+```
+Utilizando redes neuronales por nnet se obtuvo un porcentaje de acuero de casi 86% en donde, si se observa la matriz de confusión, hubo una equivocación de 2 casas caras y 60 casas intermedias, que a pesar de mostrar un buen porcentaje de predicción, parece ser un número significativo de equivocaciones, cabe mencionar que el modelo solo predijo que las casas eran económicas.
+
+Ahora se utilizará el modelo por RWEKA
+```{r Rweka, echo=FALSE}
+NB <- make_Weka_classifier("weka/classifiers/functions/MultilayerPerceptron")
+NB 
+WOW(NB)
+nnodos='32'
+
+modelo.bp<-NB(datosCasas$y~., data=datos,subset = trainRowsNumber, control=Weka_control(H=nnodos, N=1000, G=TRUE), options=NULL)
+test$prediccionWeka<-predict(modelo.bp, newdata = test[,1:32])
+cfmWeka<-confusionMatrix(test$prediccionWeka,test$y)
+cfmWeka
+```
+Con un modelo de redes neuronales por RWEKA con 32 nodos, se ha obtenido un porcenaje de 94.7% de acierto. En este modelo, como se puede ver en la matriz de confusión, se han clasificado incorrectamente 9 casas económicas y 14 casas intermedias, por lo que su capacidad de predicción parece ser muy buena. Cabe mencionar que a diferencia del anterior (nnet) el tiempo de entrenamiento fue un poco más tardado, pero esto se puede ver reflejado en un aumento en el porcentaje de acierto.
+
+En comparación de los dos métodos anteriores con distintas topologías, se puede ver una mejora en la red realizada por RWEKA, como dicho en el análisis de nnet, se notó que la predicción se limitó principalmente a clasificar las casas como económicas, parece que el algoritmo aprendió patroner que no se pueden generalizar tanto, lo cual se vio evidenciado en el resultado de clasificación, por el otro lado, por RWEKA se puede observar que ya no sucede este mismo, ahora la predicción clasifica correctamente más casas, por lo que el porcentaje de error disminuye considerablemente.
+
+
 
