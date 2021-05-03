@@ -78,9 +78,8 @@ En comparación de los dos métodos anteriores con distintas topologías, se pue
 
 ##Redes neuronales con SalesPrice como variable respuesta
 
-```{r neuralnetSalePrice, echo=False}
+```{r neural WEKA SalePrice, echo=FALSE}
 
-WOW(NB)
 nnodos='32'
 
 datosrneural <- datos[,-34]
@@ -104,19 +103,10 @@ testT <- test[,c(1:32,34)]
 modeloCaret <- train(SalePrice~., data=train, method="nnet", trace=F)
 modeloCaret
 test$prediccionCaret<-predict(modeloCaret, newdata = testT[,1:33])
+View(test)
 ```
 
-```{r}
-#View(train)
-#modelo.nnS <- neuralnet(SalePrice~MSSubClass + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF + TotalBsmtSF + X1stFlrSF + X2ndFlrSF + LowQualFinSF + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + HalfBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + GarageArea + WoodDeckSF + OpenPorchSF + EnclosedPorch + X3SsnPorch + ScreenPorch + PoolArea + MiscVal + MoSold + YrSold,train,hidden = 2, threshold = 0.3, stepmax = 1e+07, rep =6)
 
-#test$PredNeuralNetSP <- round(predict(modelo.nnS,newdata = test[,1:32]),0)
-
-#corrN2 <- data.frame(test$SalePrice,test$PredNeuralNetSP)
-#chart.Correlation(corrN2)
-
-#``
-Observando 
 
 
 
