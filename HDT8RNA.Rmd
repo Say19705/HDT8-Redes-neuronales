@@ -98,15 +98,28 @@ chart.Correlation(corrN1)
 ```
 Haciendo el modelo de correlación de la variable "SalePrice" y la predicción referente, se puede observar en el diagrama de dispersión que existe una relación evidente entre las dos variables, lo que implica que los precios predichos son muy similares a los precios reales, esto se puede observar aún mejor, observando en valor R^2, en donde tiene un 0.93, por lo que si se correlacionan bastante.
 
-```{r}
+```{r caret, echo=FALSE}
+library(brnn)
 testT <- test[,c(1:32,34)]
-modeloCaret <- train(SalePrice~., data=train, method="nnet", trace=F)
+modeloCaret <- train(SalePrice~., data=train, method="brnn", trace=F)
 modeloCaret
 test$prediccionCaret<-predict(modeloCaret, newdata = testT[,1:33])
-View(test)
+
+plot(x = test$SalePrice, y= test$prediccionCaret, xlab= "SalePrice", ylab= "Prediccion", main = "SalePrice vs predicción")
+abline(lm(test$SalePrice ~ test$prediccionCaret), col = "red")
+
+
+corrN2 <- data.frame(test$SalePrice,test$prediccionCaret)
+chart.Correlation(corrN2)
 ```
+Ahora para predecir salePrice se utilizó caret con el método de bayesian regularized neural networks, que consiste en la regularización bayesiana y la optimización por el algoritmo de Gauss-newton. Como se puede ver en el modelo de regresión, principalmente en el diagrama de dispersión, si muestra una alta correlación entre la predicción y el valor real, por lo que estos precios se asemejan bastante a lo que son realmente. Observando el valor R^2, que es 0.96, tambien podemos observar que tiene un valor bastante alto, por lo tanto la predicción es certera.
+
+##comparando los algoritmos de RNA para SalePrice
+Se han utilizado dos algoritmos con el propósito de comparar su precisión, como se puede observar anteriormente ambos modelos tuvieron un R^2 bastante alto, sin embargo, la predicción realizada con caret brnn fue un poco más certera (con una diferencia de 0.03), cabe mencionar que caret tuvo un tiempo mayor de procesamiento de RWEKA, problememente por la naturaleza de comparación de brnn. Se concluye que el modelo de caret utilizando el método de bayesian regularized neural networks presenta una mejor capacidad de predicción.
+
+##comparación con las hojas pasadas de la clasificación
 
 
-
+##comparación con las hojas pasadas de SalePrice
 
 
