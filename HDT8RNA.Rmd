@@ -26,6 +26,7 @@ library(RWeka)
 library(neural)
 library(dummy)
 library(neuralnet)
+library(PerformanceAnalytics)
 
 porciento <- 70/100
 
@@ -34,7 +35,7 @@ set.seed(123)
 datosCasas$clasificacion <- ifelse(datosCasas$SalePrice <= 251000, "Economicas", ifelse(datosCasas$SalePrice <= 538000, "Intermedias", ifelse(datosCasas$SalePrice <= 755000, "Caras")))
 
 datosCasas$y <- factor(datosCasas$clasificacion)
-datos <- datosCasas[,c(2,4,18,19,20,21,27,35,37,38,39,44,45,46,47,48,49,50,51,52,53,55,57,60,62,63,67,68,69,70,71,72,76,77,78,83)]
+datos <- datosCasas[,c(2,4,18,19,20,21,27,35,37,38,39,44,45,46,47,48,49,50,51,52,53,55,57,60,62,63,67,68,69,70,71,72,76,77,78,81,83)]
 datos <- datos[,colSums(is.na(datos))==0]
 
 trainRowsNumber<-sample(nrow(datos),porciento*nrow(datos))
@@ -45,15 +46,14 @@ test<-datos[-trainRowsNumber,]
 Para poder clasificar una casa como económica, inermedia y cara se utilizarán 2 métodos de redes neuronales con distinta topología para poder comparar resultados e identificar difenrencias.
 primero se utilizará el modelo de redes neuronales por nnet
 
-```{r nnet, echo=FALSE}
+```{r nnet clasificación, echo=FALSE}
 
 
-modelo.nn2 <- nnet(datosCasas$y~.,data = datos,subset = trainRowsNumber, size=2, rang=0.1,
+modelo.nn2 <- nnet(datos$y~.,data = datos,subset = trainRowsNumber, size=2, rang=0.1,
                    decay=5e-4, maxit=200) 
-
-prediccion2 <- as.data.frame(predict(modelo.nn2, newdata = test[,1:32]))
+prediccion2 <- as.data.frame(predict(modelo.nn2, newdata = test[,1:33]))
 columnaMasAlta<-apply(prediccion2, 1, function(x) colnames(prediccion2)[which.max(x)])
-test$prediccion2<-columnaMasAlta #Se le aÃ±ade al grupo de prueba el valor de la predicciÃ³n
+test$prediccion2<-columnaMasAlta 
 
 cfm<-confusionMatrix(as.factor(test$prediccion2),test$y)
 cfm
@@ -61,20 +61,62 @@ cfm
 Utilizando redes neuronales por nnet se obtuvo un porcentaje de acuero de casi 86% en donde, si se observa la matriz de confusión, hubo una equivocación de 2 casas caras y 60 casas intermedias, que a pesar de mostrar un buen porcentaje de predicción, parece ser un número significativo de equivocaciones, cabe mencionar que el modelo solo predijo que las casas eran económicas.
 
 Ahora se utilizará el modelo por RWEKA
-```{r Rweka, echo=FALSE}
+```{r Rweka clasificación, echo=FALSE}
 NB <- make_Weka_classifier("weka/classifiers/functions/MultilayerPerceptron")
 NB 
 WOW(NB)
-nnodos='32'
+nnodos='33'
 
-modelo.bp<-NB(datosCasas$y~., data=datos,subset = trainRowsNumber, control=Weka_control(H=nnodos, N=1000, G=TRUE), options=NULL)
-test$prediccionWeka<-predict(modelo.bp, newdata = test[,1:32])
+modelo.bp<-NB(datos$y~., data=datos,subset = trainRowsNumber, control=Weka_control(H=nnodos, N=1000, G=TRUE), options=NULL)
+test$prediccionWeka<-predict(modelo.bp, newdata = test[,1:33])
 cfmWeka<-confusionMatrix(test$prediccionWeka,test$y)
 cfmWeka
 ```
-Con un modelo de redes neuronales por RWEKA con 32 nodos, se ha obtenido un porcenaje de 94.7% de acierto. En este modelo, como se puede ver en la matriz de confusión, se han clasificado incorrectamente 9 casas económicas y 14 casas intermedias, por lo que su capacidad de predicción parece ser muy buena. Cabe mencionar que a diferencia del anterior (nnet) el tiempo de entrenamiento fue un poco más tardado, pero esto se puede ver reflejado en un aumento en el porcentaje de acierto.
+Con un modelo de redes neuronales por RWEKA con 32 nodos, se ha obtenido un porcenaje de 97% de acierto. En este modelo, como se puede ver en la matriz de confusión, se han clasificado incorrectamente 6 casas económicas y 8 casas intermedias, por lo que su capacidad de predicción parece ser muy buena. Cabe mencionar que a diferencia del anterior (nnet) el tiempo de entrenamiento fue un poco más tardado, pero esto se puede ver reflejado en un aumento en el porcentaje de acierto.
 
 En comparación de los dos métodos anteriores con distintas topologías, se puede ver una mejora en la red realizada por RWEKA, como dicho en el análisis de nnet, se notó que la predicción se limitó principalmente a clasificar las casas como económicas, parece que el algoritmo aprendió patroner que no se pueden generalizar tanto, lo cual se vio evidenciado en el resultado de clasificación, por el otro lado, por RWEKA se puede observar que ya no sucede este mismo, ahora la predicción clasifica correctamente más casas, por lo que el porcentaje de error disminuye considerablemente.
+
+##Redes neuronales con SalesPrice como variable respuesta
+
+```{r neuralnetSalePrice, echo=False}
+
+WOW(NB)
+nnodos='32'
+
+datosrneural <- datos[,-34]
+modelo.bp2<-NB(datosrneural$SalePrice~., data=datosrneural,subset = trainRowsNumber, control=Weka_control(H=nnodos, N=1000, G=TRUE), options=NULL)
+test$prediccionWeka2S<-predict(modelo.bp2, newdata = test[,1:32])
+
+plot(x = test$SalePrice, y= test$prediccionWeka2S, xlab= "SalePrice", ylab= "Prediccion", main = "SalePrice vs predicción")
+abline(lm(test$SalePrice ~ test$prediccionWeka2S), col = "red")
+
+
+corrN1 <- data.frame(test$SalePrice,test$prediccionWeka2S)
+chart.Correlation(corrN1)
+#cfmWeka<-confusionMatrix(test$prediccionWeka2S,test$SalePrice)
+
+#cfmWeka
+```
+Haciendo el modelo de correlación de la variable "SalePrice" y la predicción referente, se puede observar en el diagrama de dispersión que existe una relación evidente entre las dos variables, lo que implica que los precios predichos son muy similares a los precios reales, esto se puede observar aún mejor, observando en valor R^2, en donde tiene un 0.93, por lo que si se correlacionan bastante.
+
+```{r}
+testT <- test[,c(1:32,34)]
+modeloCaret <- train(SalePrice~., data=train, method="nnet", trace=F)
+modeloCaret
+test$prediccionCaret<-predict(modeloCaret, newdata = testT[,1:33])
+```
+
+```{r}
+#View(train)
+#modelo.nnS <- neuralnet(SalePrice~MSSubClass + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF + TotalBsmtSF + X1stFlrSF + X2ndFlrSF + LowQualFinSF + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + HalfBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + GarageArea + WoodDeckSF + OpenPorchSF + EnclosedPorch + X3SsnPorch + ScreenPorch + PoolArea + MiscVal + MoSold + YrSold,train,hidden = 2, threshold = 0.3, stepmax = 1e+07, rep =6)
+
+#test$PredNeuralNetSP <- round(predict(modelo.nnS,newdata = test[,1:32]),0)
+
+#corrN2 <- data.frame(test$SalePrice,test$PredNeuralNetSP)
+#chart.Correlation(corrN2)
+
+#``
+Observando 
 
 
 
