@@ -10,14 +10,16 @@ knitr::opts_chunk$set(echo = TRUE)
 #Ingebor Rubio/Desktop/Trabajos/Quinto Semestre/Mineria/HDT7SVM
 #"C:/Users/andre/OneDrive/Documentos/3er año/1er semestre/Minería de #datos/HDT8-Redes-neuronales"
 
-knitr::opts_knit$set(root.dir="C:/Users/andre/OneDrive/Documentos/3er año/1er semestre/Minería de datos/HDT8-Redes-neuronales")
+knitr::opts_knit$set(root.dir="C:/Users/Ingebor Rubio/Desktop/Trabajos/Quinto Semestre/Mineria/HDT8-Redes-neuronales")
 ```
+
 
 # Hoja de Trabajo No. 8: Redes neuronales
 
-En esta hoja de trabajo se busca poder clasificar una casa según su precio de venta, dividiendoló en 3 grupos; económicas, intermedias y caras. con el fin de poder realizar esta predicción se utilizará redes neuronales para evaluar cuál método ofrece el mejor resultado. Los algoritmos de RNA son capaces de aprender modicándose automáticamente así mismo y automatizando sus funciones, son bastante complejos, pero esto permite que la predicción sea certera.
+En esta hoja de trabajo se busca poder clasificar una casa según su precio de venta, dividiendoló en 3 grupos; económicas, intermedias y caras. con el fin de poder realizar esta predicción se utilizará redes neuronales para evaluar cuál método ofrece el mejor resultado. Los algoritmos de RNA son capaces de aprender modicándose automáticamente a sí mismos y automatizando sus funciones, son bastante complejos, pero esto permite que la predicción sea certera.
 
 Primero es necesario cargar los datos, colocar los rangos y realizar el corte para tener un conjunto de entrenamiento y otro de prueba
+
 ```{r data, echo=FALSE}
 datosCasas <- read.csv("train.csv")
 library(caret)
@@ -44,7 +46,9 @@ test<-datos[-trainRowsNumber,]
 ```
 
 Para poder clasificar una casa como económica, inermedia y cara se utilizarán 2 métodos de redes neuronales con distinta topología para poder comparar resultados e identificar difenrencias.
-primero se utilizará el modelo de redes neuronales por nnet
+Primero se utilizará el modelo de redes neuronales por nnet:
+
+## Modelo con redes neuronales por nnet:
 
 ```{r nnet clasificación, echo=FALSE}
 
@@ -58,9 +62,13 @@ test$prediccion2<-columnaMasAlta
 cfm<-confusionMatrix(as.factor(test$prediccion2),test$y)
 cfm
 ```
+
 Utilizando redes neuronales por nnet se obtuvo un porcentaje de acuero de casi 86% en donde, si se observa la matriz de confusión, hubo una equivocación de 2 casas caras y 60 casas intermedias, que a pesar de mostrar un buen porcentaje de predicción, parece ser un número significativo de equivocaciones, cabe mencionar que el modelo solo predijo que las casas eran económicas.
 
 Ahora se utilizará el modelo por RWEKA
+
+## Modelo con redes neuronales por RWeka
+
 ```{r Rweka clasificación, echo=FALSE}
 NB <- make_Weka_classifier("weka/classifiers/functions/MultilayerPerceptron")
 NB 
@@ -72,11 +80,12 @@ test$prediccionWeka<-predict(modelo.bp, newdata = test[,1:33])
 cfmWeka<-confusionMatrix(test$prediccionWeka,test$y)
 cfmWeka
 ```
+
 Con un modelo de redes neuronales por RWEKA con 32 nodos, se ha obtenido un porcenaje de 97% de acierto. En este modelo, como se puede ver en la matriz de confusión, se han clasificado incorrectamente 6 casas económicas y 8 casas intermedias, por lo que su capacidad de predicción parece ser muy buena. Cabe mencionar que a diferencia del anterior (nnet) el tiempo de entrenamiento fue un poco más tardado, pero esto se puede ver reflejado en un aumento en el porcentaje de acierto.
 
-En comparación de los dos métodos anteriores con distintas topologías, se puede ver una mejora en la red realizada por RWEKA, como dicho en el análisis de nnet, se notó que la predicción se limitó principalmente a clasificar las casas como económicas, parece que el algoritmo aprendió patroner que no se pueden generalizar tanto, lo cual se vio evidenciado en el resultado de clasificación, por el otro lado, por RWEKA se puede observar que ya no sucede este mismo, ahora la predicción clasifica correctamente más casas, por lo que el porcentaje de error disminuye considerablemente.
+En comparación de los dos métodos anteriores con distintas topologías, se puede ver una mejora en la red realizada por RWEKA, como dicho en el análisis de nnet, se notó que la predicción se limitó principalmente a clasificar las casas como económicas, parece que el algoritmo aprendió patrones que no se pueden generalizar tanto, lo cual se vio evidenciado en el resultado de clasificación, por el otro lado, por RWEKA se puede observar que ya no sucede este mismo, ahora la predicción clasifica correctamente más casas, por lo que el porcentaje de error disminuye considerablemente.
 
-##Redes neuronales con SalesPrice como variable respuesta
+## Redes neuronales con SalesPrice como variable respuesta
 
 ```{r neural WEKA SalePrice, echo=FALSE}
 
@@ -96,7 +105,10 @@ chart.Correlation(corrN1)
 
 #cfmWeka
 ```
+
 Haciendo el modelo de correlación de la variable "SalePrice" y la predicción referente, se puede observar en el diagrama de dispersión que existe una relación evidente entre las dos variables, lo que implica que los precios predichos son muy similares a los precios reales, esto se puede observar aún mejor, observando en valor R^2, en donde tiene un 0.93, por lo que si se correlacionan bastante.
+
+## Predicción de SalesPrice por medio de caret
 
 ```{r caret, echo=FALSE}
 library(brnn)
@@ -112,14 +124,20 @@ abline(lm(test$SalePrice ~ test$prediccionCaret), col = "red")
 corrN2 <- data.frame(test$SalePrice,test$prediccionCaret)
 chart.Correlation(corrN2)
 ```
+
 Ahora para predecir salePrice se utilizó caret con el método de bayesian regularized neural networks, que consiste en la regularización bayesiana y la optimización por el algoritmo de Gauss-newton. Como se puede ver en el modelo de regresión, principalmente en el diagrama de dispersión, si muestra una alta correlación entre la predicción y el valor real, por lo que estos precios se asemejan bastante a lo que son realmente. Observando el valor R^2, que es 0.96, tambien podemos observar que tiene un valor bastante alto, por lo tanto la predicción es certera.
 
-##comparando los algoritmos de RNA para SalePrice
+## Comparando los algoritmos de RNA para SalePrice
+
 Se han utilizado dos algoritmos con el propósito de comparar su precisión, como se puede observar anteriormente ambos modelos tuvieron un R^2 bastante alto, sin embargo, la predicción realizada con caret brnn fue un poco más certera (con una diferencia de 0.03), cabe mencionar que caret tuvo un tiempo mayor de procesamiento de RWEKA, problememente por la naturaleza de comparación de brnn. Se concluye que el modelo de caret utilizando el método de bayesian regularized neural networks presenta una mejor capacidad de predicción.
 
-##comparación con las hojas pasadas de la clasificación
+## Comparación con las hojas pasadas de la clasificación
 
+En las hojas anteriores se han utilizado varios algoritmos de ML, entre estos están Random forest, naive Bayes, árbol de decisión y SVM modelo de kernel lineal, en donde se obtuvo un porcentaje de accuracy de 83%, 46.7%, 84.91% y 94.99% respectivamente, se puede observar que la eficiencia de estos algoritmos varía bastante, sin embargo, en la mayoría han sido satisfactorios. Comparando los resultados de las hojas anteriores con los algoritmos de redes neuronales para predecir la clasificación, se observó que en uno de los algoritmos usados, específicamente RWEKA, hubo una mejora sustancial respecto a los algoritmos anteriores, este tuvo una accuracy de 96.81%, siendo el más alto obtenido hasta ahora. Cabe mencionar que el modelo RNA por nnet,a pesar de no ser tan acertado en clasificación como RWEKA, tuvo un accuracy de 85.88, que comparandolo con los valores de hojas anteriores, también presenta ser bastante bueno. 
 
-##comparación con las hojas pasadas de SalePrice
+Por último, es importante mencionar que de todos los métodos de ML utilizados para predecir la clasificación, el algoritmo RWEKA ha sido el que más tiempo se ha demorado, a pesar de que no es mucha la diferencia, implica que es necesario más RAM, y en análisis en donde se tenga más datos, este tiempo de procesamiento puede aumentar sustancialmente, no obstante, lo recompensa con capacidad de precisión, por lo tanto se concluye que de los métodos utilizados, es el más adecuado.
 
+## Comparación con las hojas pasadas de SalePrice
 
+Al comparar los resultados obtenidos por medio del árbol de regresión, puede observarse que se ha contado con una mejora evidente en ambos modelos de redes neuronales, tanto con RWEKA como con caret, siendo de estos dos últimos el que ha tenido un mejor rendimiento el modelo planteado con caret con un  R^2 de 0.96, mientras que el realizado conn RWEKA ha tenido un  R^2 de 0.93. 
+Estos modelos han tomado más tiempo para ejecutarse, pero también han obtenido un rendimiento mucho mayor, por lo que la capacidad computacional que necesita es recompensada con los altos porcentajes de rendimiento.
